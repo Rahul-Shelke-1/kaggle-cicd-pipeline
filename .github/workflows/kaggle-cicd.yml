@@ -31,7 +31,7 @@ jobs:
       enable_gpu:      ${{ steps.parse.outputs.enable_gpu }}
       enable_tpu:      ${{ steps.parse.outputs.enable_tpu }}
       enable_internet: ${{ steps.parse.outputs.enable_internet }}
-      machine_shape:   ${{ steps.parse.outputs.machine_shape }}
+      accelerator:   ${{ steps.parse.outputs.accelerator }}
 
       # Dependencies
       dataset_sources:     ${{ steps.parse.outputs.dataset_sources }}
@@ -95,6 +95,18 @@ jobs:
         run: |
           python scripts/kaggle_cicd/inject_github_metadata.py
 
+      - name: Normalize Notebook
+        env:
+          NOTEBOOK: ${{ needs.validate-notebook-config.outputs.notebook }}
+        run: |
+          python scripts/kaggle_cicd/prepare_notebook.py
+
+      - name: Verify notebook metadata
+        env:
+          NOTEBOOK: ${{ needs.validate-notebook-config.outputs.notebook }}
+        run: |
+          python scripts/kaggle_cicd/varify_notebook.py
+
       - name: Generate kernel-metadata.json
         env:
           KAGGLE_USERNAME:       ${{ secrets.KAGGLE_USERNAME }}
@@ -109,7 +121,7 @@ jobs:
           ENABLE_GPU:            ${{ needs.validate-notebook-config.outputs.enable_gpu }}
           ENABLE_TPU:            ${{ needs.validate-notebook-config.outputs.enable_tpu }}
           ENABLE_INTERNET:       ${{ needs.validate-notebook-config.outputs.enable_internet }}
-          MACHINE_SHAPE:         ${{ needs.validate-notebook-config.outputs.machine_shape }}
+          ACCELERATOR:           ${{ needs.validate-notebook-config.outputs.accelerator }}
 
           DATASET_SOURCES:       ${{ needs.validate-notebook-config.outputs.dataset_sources }}
           COMPETITION_SOURCES:   ${{ needs.validate-notebook-config.outputs.competition_sources }}
