@@ -48,7 +48,7 @@ jobs:
         with:
           fetch-depth: 2 # Required to run git diff against the previous commit
 
-      - name: Detecte changed notebook
+      - name: Detect changed notebook
         id: detect
         env:
           BEFORE_SHA: ${{ github.event.before }}
