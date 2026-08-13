@@ -46,7 +46,7 @@ jobs:
       - name: Checkout Repository
         uses: actions/checkout@v5
         with:
-          fetch-depth: 2 # Required to run git diff against the previous commit
+          fetch-depth: 0 # Required to run git diff against the previous commit
 
       - name: Detect changed notebook
         id: detect
