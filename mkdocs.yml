@@ -1,8 +1,8 @@
 site_name: Kaggle CICD Pipeline Docs
 site_url: https://github.com/Rahul-Shelke-1/kaggle-cicd-pipeline/
 site_description: >
-  A scalable and automated ETL pipeline that extracts news data from BBC News,
-  stores it in a NoSQL database, and provides real-time monitoring of the scraping process.
+  Comprehensive documentation for an automated, cost-optimized 'fire-and-forget' CI/CD pipeline using 
+  GitHub Actions and uv to execute Kaggle notebook workloads while eliminating runner wait times.
 
 repo_url: https://github.com/Rahul-Shelke-1/kaggle-cicd-pipeline
 repo_name: kaggle-cicd-pipeline
