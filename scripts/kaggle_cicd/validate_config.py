@@ -77,7 +77,7 @@ CONFIG_SCHEMA: dict[str, Configfield] = {
         "type": bool,
         "required": True,
     },
-    "machine_shape": {
+    "accelerator": {
         "type": str,
         "required": False,
         "choices": ["NvidiaTeslaT4", "NvidiaTeslaP100", "Tpu1VmV38"],
@@ -213,18 +213,18 @@ def validate_machine(config: dict) -> None:
 
     enable_gpu = config.get("enable_gpu")
     enable_tpu = config.get("enable_tpu")
-    machine_shape = config.get("machine_shape")
+    accelerator = config.get("accelerator")
 
     # Optional field
-    if machine_shape is None:
+    if accelerator is None:
         return
 
-    valid_choices = CONFIG_SCHEMA["machine_shape"]["choices"]
+    valid_choices = CONFIG_SCHEMA["accelerator"]["choices"]
 
     if enable_gpu or enable_tpu:
-        if machine_shape not in valid_choices:
+        if accelerator not in valid_choices:
             raise ValidationError(
-                f"Invalid machine_shape '{machine_shape}'. "
+                f"Invalid accelerator '{accelerator}'. "
                 f"Expected one of: {', '.join(valid_choices)}."
             )
 
