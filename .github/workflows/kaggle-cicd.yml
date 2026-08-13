@@ -1,0 +1,233 @@
+name: Dynamic Kaggle Fire-and-Forget Pipeline
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'notebooks/*.ipynb' # Triggers only when a notebook file changes
+
+jobs:
+  ################################################################################
+  # job 1 - Validate Notebook Configuration
+  ################################################################################
+  validate-notebook-config:
+    name: Validate Notebook Configuration
+    runs-on: ubuntu-latest
+
+    outputs:
+      # Execution
+      execute:  ${{ steps.detect.outputs.execute }}
+      notebook: ${{ steps.detect.outputs.notebook }}
+      slug:     ${{ steps.parse.outputs.title }}
+
+      # Kernel Metadata
+      title:       ${{ steps.parse.outputs.title }}
+      language:    ${{ steps.parse.outputs.language }}
+      kernel_type: ${{ steps.parse.outputs.kernel_type }}
+      is_private:  ${{ steps.parse.outputs.is_private }}
+
+      # Runtime
+      enable_gpu:      ${{ steps.parse.outputs.enable_gpu }}
+      enable_tpu:      ${{ steps.parse.outputs.enable_tpu }}
+      enable_internet: ${{ steps.parse.outputs.enable_internet }}
+      machine_shape:   ${{ steps.parse.outputs.machine_shape }}
+
+      # Dependencies
+      dataset_sources:     ${{ steps.parse.outputs.dataset_sources }}
+      competition_sources: ${{ steps.parse.outputs.competition_sources }}
+      kernel_sources:      ${{ steps.parse.outputs.kernel_sources }}
+      model_sources:       ${{ steps.parse.outputs.model_sources }}
+
+      # Metadata
+      keywords: ${{ steps.parse.outputs.keywords }}
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v5
+        with:
+          fetch-depth: 2 # Required to run git diff against the previous commit
+
+      - name: Detecte changed notebook
+        id: detect
+        env:
+          BEFORE_SHA: ${{ github.event.before }}
+          AFTER_SHA:  ${{ github.sha }}
+          TEST_NOTEBOOK: ${{ secrets.TEST_NOTEBOOK }}
+        run: python scripts/kaggle_cicd/detect_notebooks.py
+
+      - name: Parse notebook configuration
+        id: parse
+        if: steps.detect.outputs.notebook != ''
+        env:
+          NOTEBOOK: ${{ steps.detect.outputs.notebook }}
+        run: python scripts/kaggle_cicd/parse_notebook_config.py
+
+      - name: Validate configuration
+        env:
+          NOTEBOOK: ${{ steps.detect.outputs.notebook }}
+        run: python scripts/kaggle_cicd/validate_config.py
+
+  ################################################################################
+  # job 2 - Validate Kaggle Metadata
+  ################################################################################
+  validate-kaggle-metadata:
+    name: Validate Kaggle Metadata
+    runs-on: ubuntu-latest
+    needs: validate-notebook-config
+
+    if: needs.validate-notebook-config.outputs.notebook != ''
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v5
+
+      - name: Inject GitHub Metadata
+        env:
+          GITHUB_SHA:          ${{ github.sha }}
+          GITHUB_REF_NAME:     ${{ github.ref_name }}
+          GITHUB_RUN_ID:       ${{ github.run_id }}
+          GITHUB_RUN_NUMBER:   ${{ github.run_number }}
+          KAGGLE_USERNAME:     ${{ secrets.KAGGLE_USERNAME }}
+          KAGGLE_KEY:          ${{ secrets.KAGGLE_KEY }}
+          KAGGLE_DATASET_NAME: ${{ secrets.KAGGLE_DATASET_NAME }}
+          NOTEBOOK:            ${{ needs.validate-notebook-config.outputs.notebook }}
+        run: |
+          python scripts/kaggle_cicd/inject_github_metadata.py
+
+      - name: Generate kernel-metadata.json
+        env:
+          KAGGLE_USERNAME:       ${{ secrets.KAGGLE_USERNAME }}
+          NOTEBOOK:              ${{ needs.validate-notebook-config.outputs.notebook }}
+          SLUG:                  ${{ needs.validate-notebook-config.outputs.title }}
+
+          TITLE:                 ${{ needs.validate-notebook-config.outputs.title }} # slug should be same title
+          LANGUAGE:              ${{ needs.validate-notebook-config.outputs.language }}
+          KERNEL_TYPE:           ${{ needs.validate-notebook-config.outputs.kernel_type }}
+          IS_PRIVATE:            ${{ needs.validate-notebook-config.outputs.is_private }}
+
+          ENABLE_GPU:            ${{ needs.validate-notebook-config.outputs.enable_gpu }}
+          ENABLE_TPU:            ${{ needs.validate-notebook-config.outputs.enable_tpu }}
+          ENABLE_INTERNET:       ${{ needs.validate-notebook-config.outputs.enable_internet }}
+          MACHINE_SHAPE:         ${{ needs.validate-notebook-config.outputs.machine_shape }}
+
+          DATASET_SOURCES:       ${{ needs.validate-notebook-config.outputs.dataset_sources }}
+          COMPETITION_SOURCES:   ${{ needs.validate-notebook-config.outputs.competition_sources }}
+          KERNEL_SOURCES:        ${{ needs.validate-notebook-config.outputs.kernel_sources }}
+          MODEL_SOURCES:         ${{ needs.validate-notebook-config.outputs.model_sources }}
+
+          KEYWORDS:              ${{ needs.validate-notebook-config.outputs.keywords }}
+        run: |
+          python scripts/kaggle_cicd/generate_kernel_metadata.py
+
+      - name: Upload Artifact
+        if: ${{ !env.ACT }}
+        uses: actions/upload-artifact@v5
+        with:
+          name: kaggle-notebook
+          path: |
+            notebooks/kernel-metadata.json
+            ${{ needs.validate-notebook-config.outputs.notebook }}
+
+      - name: Show kernel metadata
+        if: ${{ !env.ACT }}
+        run: |
+          cat notebooks/kernel-metadata.json
+
+  ################################################################################
+  # job 3 - Upload to Kaggle
+  ################################################################################
+  upload-kaggle:
+    name: Upload Notebook to Kaggle
+    runs-on: ubuntu-latest
+    needs: [validate-kaggle-metadata, validate-notebook-config]
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v5
+
+      - name: Setup uv
+        uses: astral-sh/setup-uv@v5
+        with:
+          python-version: "3.11"
+          enable-cache: true
+
+      - name: Install Kaggle CLI
+        run: |
+          uv pip install kaggle
+
+      - name: Download notebook artifact
+        if: ${{ !env.ACT }}
+        uses: actions/download-artifact@v5
+        with:
+          name: kaggle-notebook
+          path: notebooks
+
+      - name: Configure Kaggle Authentication
+        run: |
+          mkdir -p ~/.kaggle
+          echo '{"username":"${{ secrets.KAGGLE_USERNAME }}","key":"${{ secrets.KAGGLE_KEY }}"}' > ~/.kaggle/kaggle.json
+          chmod 600 ~/.kaggle/kaggle.json
+
+      - name: Show kernel metadata
+        if: ${{ !env.ACT }}
+        run: |
+          cat notebooks/kernel-metadata.json
+
+      - name: Push Notebook to Kaggle
+        if: ${{ !env.ACT }}
+        id: push
+        env:
+          NOTEBOOK:          ${{ needs.validate-notebook-config.outputs.notebook }}
+          KAGGLE_USERNAME:   ${{ secrets.KAGGLE_USERNAME }}
+          KAGGLE_KEY:        ${{ secrets.KAGGLE_KEY }}
+        run: |
+          python scripts/kaggle_cicd/push_to_kaggle.py
+
+  ################################################################################
+  # job 4 - Trigger Execution
+  ################################################################################
+  trigger-execution:
+    name: Trigger Notebook Execution
+    runs-on: ubuntu-latest
+    needs: [upload-kaggle, validate-notebook-config]
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v5
+
+      - name: Setup uv
+        uses: astral-sh/setup-uv@v5
+        with:
+          python-version: "3.11"
+          enable-cache: true
+
+      - name: Install Kaggle CLI
+        run: |
+          uv pip install kaggle
+
+      - name: Download notebook artifact
+        if: ${{ !env.ACT }}
+        uses: actions/download-artifact@v5
+        with:
+          name: kaggle-notebook
+          path: notebooks
+
+      - name: Trigger Execution
+        env:
+          KAGGLE_USERNAME:   ${{ secrets.KAGGLE_USERNAME }}
+          KAGGLE_KEY:        ${{ secrets.KAGGLE_KEY }}
+          NOTEBOOK:          ${{ needs.validate-notebook-config.outputs.notebook }}
+        run: |
+          python scripts/kaggle_cicd/trigger_execution.py
+
+      - name: Publish Workflow Summary
+        env:
+          NOTEBOOK:          ${{ needs.validate-notebook-config.outputs.notebook }}
+          SLUG:              ${{ needs.validate-notebook-config.outputs.title }}
+          GITHUB_SHA:        ${{ github.sha }}
+          GITHUB_REF_NAME:   ${{ github.ref_name }}
+          GITHUB_RUN_NUMBER: ${{ github.run_number }}
+          KAGGLE_USERNAME:   ${{ secrets.KAGGLE_USERNAME }}
+        run: |
+          python scripts/kaggle_cicd/publish_summary.py
