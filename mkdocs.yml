@@ -1,0 +1,151 @@
+site_name: Kaggle CICD Pipeline Docs
+site_url: https://github.com/Rahul-Shelke-1/kaggle-cicd-pipeline/
+site_description: >
+  A scalable and automated ETL pipeline that extracts news data from BBC News,
+  stores it in a NoSQL database, and provides real-time monitoring of the scraping process.
+
+repo_url: https://github.com/Rahul-Shelke-1/kaggle-cicd-pipeline
+repo_name: kaggle-cicd-pipeline
+
+theme:
+  name: "material"
+  icon:
+    repo: fontawesome/brands/git-alt
+    logo: fontawesome/solid/r
+    favicons: assets/favicon.ico
+  language: en
+  font:
+    text: Merriweather Sans
+    code: Red Hat Mono
+  features:
+    - content.code.annotate
+    - content.code.copy
+    - content.tabs.link
+    - header.autohide
+    - announce.dismiss
+    - navigation.footer
+    - navigation.indexes
+    - navigation.sections
+    - navigation.tabs
+    - navigation.top
+    - navigation.tracking
+    - search.highlight
+    - search.share
+    - search.suggest
+
+  palette:
+
+    # Palette toggle for light mode
+    - media: "(prefers-color-scheme: light)"
+      scheme: slate
+      primary: black
+      accent: deep orange
+      toggle:
+        icon: material/toggle-switch-off-outline
+        name: Switch to light mode
+
+    # Palette toggle for dark mode
+    - media: "(prefers-color-scheme: dark)"
+      scheme: default
+      primary: blue
+      accent: deep orange
+      toggle:
+        icon: material/toggle-switch
+        name: Switch to dark mode
+
+nav:
+  - Home: index.md
+
+  - Architecture & Design:
+      - System Architecture: 01-system-design/architecture-overview.md
+      - Workflow & Component Flows: 01-system-design/component-diagram.md
+      - System Flows:
+          - Git Change Detection Flow: 01-system-design/data-flow.md
+          - Remote Execution Flow: 01-system-design/request-flow.md
+          - Kaggle Execution Flow: 01-system-design/training-flow.md
+          - Experiment Tracking Flow: 01-system-design/monitoring-flow.md
+
+  - Architecture Decision Records:
+      - ADR-001 Fire-and-Forget Pattern: 02-adrs/ADR-001-fire-and-forget-pattern.md
+      - ADR-002 Dynamic Metadata Injection: 02-adrs/ADR-002-dynamic-metadata-injection.md
+      - ADR-003 Rust Dependency Resolver via uv: 02-adrs/ADR-003-uv-dependency-resolver.md
+      - ADR-004 DagsHub Experiment Tracking: 02-adrs/ADR-004-dagshub-experiment-tracking.md
+      - ADR-005 GitHub Actions Runner Optimization: 02-adrs/ADR-005-github-actions-optimization.md
+
+  - CI/CD Pipeline Strategy:
+      - Workflow Overview: 03-cicd/overview.md
+      - GitHub Actions Pipeline: 03-cicd/github-actions.md
+      - Job 1 - Config Validation: 03-cicd/validate-notebook-config.md
+      - Job 2 - Metadata & Artifact Injection: 03-cicd/validate-kaggle-metadata.md
+      - Job 3 - Kaggle API Upload via uv: 03-cicd/upload-kaggle.md
+      - Job 4 - Async Remote Execution: 03-cicd/trigger-execution.md
+      - Secrets & Environment Management: 03-cicd/secrets-management.md
+      - Local Pipeline Testing (act): 03-cicd/local-testing.md
+
+  - Developer Experience & Onboarding:
+      - Quickstart Guide: 04-onboarding/onboarding-overview.md
+      - Adding New Notebooks: 04-onboarding/adding-new-project.md
+
+  - Cost & Roadmap:
+      - Cost Optimization & Benchmarks: 05-roadmap/compute-cost-optimization.md
+
+plugins:
+  - search
+  - mkdocstrings:
+      handlers:
+        python:
+          options:
+            docstring_style: numpy                # or numpy, auto, google, sphinx
+            allow_inspection: true
+            find_stubs_package: false
+            heading_level: 3                      # starting header level
+            parameter_headings: false
+            show_symbol_type_heading: true
+            show_symbol_type_toc: true
+            type_parameter_headings: false
+            show_labels: false
+            show_submodules: true
+            extra:                                 # move all unrecognized/deprecated options here
+              ignore_init_summary: true
+              inheritance_diagram_direction: LR
+              trim_doctest_flags: true
+
+  - social:
+      cards_layout_options:
+        background_color: "#ff1493"
+
+  - autorefs:
+      link_titles: auto
+
+markdown_extensions:
+  - admonition
+  - codehilite
+  - toc:
+      permalink: true
+  - pymdownx.inlinehilite
+  - pymdownx.snippets
+  - pymdownx.superfences:
+      custom_fences:
+        - name: mermaid
+          class: mermaid
+  - pymdownx.tabbed:
+      alternate_style: true
+  - pymdownx.details
+  - pymdownx.highlight:
+      default_lang: python
+
+extra_javascript:
+- https://unpkg.com/mermaid@10.9.0/dist/mermaid.min.js
+
+extra:
+  social:
+    - icon: fontawesome/brands/linkedin
+      link: https://www.linkedin.com/in/rahulshelke981/
+      name: LinkedIn
+    - icon: fontawesome/brands/github
+      link: https://github.com/Rahul-404
+      name: Github
+
+  generator: false
+
+copyright: Copyright &copy; 2026 Rahul Shelke
