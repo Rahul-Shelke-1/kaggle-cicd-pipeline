@@ -31,7 +31,7 @@ jobs:
       enable_gpu:      ${{ steps.parse.outputs.enable_gpu }}
       enable_tpu:      ${{ steps.parse.outputs.enable_tpu }}
       enable_internet: ${{ steps.parse.outputs.enable_internet }}
-      accelerator:   ${{ steps.parse.outputs.accelerator }}
+      machine_shape:   ${{ steps.parse.outputs.machine_shape }}
 
       # Dependencies
       dataset_sources:     ${{ steps.parse.outputs.dataset_sources }}
@@ -137,7 +137,7 @@ jobs:
           ENABLE_GPU:            ${{ needs.validate-notebook-config.outputs.enable_gpu }}
           ENABLE_TPU:            ${{ needs.validate-notebook-config.outputs.enable_tpu }}
           ENABLE_INTERNET:       ${{ needs.validate-notebook-config.outputs.enable_internet }}
-          ACCELERATOR:           ${{ needs.validate-notebook-config.outputs.accelerator }}
+          MACHINE_SHAPE:           ${{ needs.validate-notebook-config.outputs.machine_shape }}
 
           DATASET_SOURCES:       ${{ needs.validate-notebook-config.outputs.dataset_sources }}
           COMPETITION_SOURCES:   ${{ needs.validate-notebook-config.outputs.competition_sources }}
