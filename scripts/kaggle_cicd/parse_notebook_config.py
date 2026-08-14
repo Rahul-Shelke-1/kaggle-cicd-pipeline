@@ -126,7 +126,7 @@ def create_config(notebook_path: Path) -> dict:
         "enable_gpu": False,
         "enable_tpu": False,
         "enable_internet": True,
-        "accelerator": "",
+        "machine_shape": "",
         "dataset_sources": [],
         "competition_sources": [],
         "kernel_sources": [],

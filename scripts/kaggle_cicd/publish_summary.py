@@ -26,7 +26,7 @@ def build_summary() -> str:
     run_number = getenv("GITHUB_RUN_NUMBER")
 
     kaggle_url = (
-        f"https://www.kaggle.com/code/{owner}/{slug}"
+        f"https://www.kaggle.com/code/rahulshelke98/{slug}"
         if owner != "N/A" and slug != "N/A"
         else "N/A"
     )
