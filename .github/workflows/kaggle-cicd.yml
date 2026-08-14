@@ -111,11 +111,17 @@ jobs:
         run: |
           python scripts/kaggle_cicd/prepare_notebook.py
 
-      - name: Verify notebook metadata
+      - name: Inspect normalized notebook
         env:
           NOTEBOOK: ${{ needs.validate-notebook-config.outputs.notebook }}
         run: |
-          python scripts/kaggle_cicd/varify_notebook.py
+          python scripts/kaggle_cicd/inspect_notebook.py
+
+      # - name: Verify notebook metadata
+      #   env:
+      #     NOTEBOOK: ${{ needs.validate-notebook-config.outputs.notebook }}
+      #   run: |
+      #     python scripts/kaggle_cicd/varify_notebook.py
 
       - name: Generate kernel-metadata.json
         env:
