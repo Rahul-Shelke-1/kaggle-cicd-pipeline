@@ -69,7 +69,7 @@ def build_metadata() -> dict:
         "enable_internet": get_bool("ENABLE_INTERNET"),
 
         # Optional
-        "machine_shape": get_string("MACHINE_SHAPE"),
+        "accelerator": get_string("ACCELERATOR"),
 
         # Dependencies
         "dataset_sources": get_list("DATASET_SOURCES"),
